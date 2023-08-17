@@ -1,24 +1,40 @@
-import React, { useEffect, useRef, useContext } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Chart } from "chart.js";
+import { CChartLine } from '@coreui/react-chartjs'
 import "chartjs-adapter-moment"; // Import the moment.js adapter
 import "chartjs-adapter-luxon"; // Import the Luxon adapter
 import StoreContext from 'src/contexts/StoreContext';
+import {
+  CButton,
+  CButtonGroup,
+  CCardBody,
+  CCol,
+  CRow,
+} from '@coreui/react'
+import CIcon from '@coreui/icons-react'
+import {
+  cilCloudDownload,
+} from '@coreui/icons'
 
-const StockPriceGraph = ({ }) => {
+import { getStyle, hexToRgba } from '@coreui/utils'
+
+const StockPriceGraph = () => {
+  const random = (min, max) => Math.floor(Math.random() * (max - min + 1) + min)
+  const [chartData, setChartData] = useState({
+    labels: [],
+    datasets: [],
+  });
 
   const { usersStockHistoryData, setUsersStockHistoryData } = useContext(StoreContext);
   const { stockInfo, setStockInfo } = useContext(StoreContext);
   const { walletInfo, setWalletInfo } = useContext(StoreContext);
-
+  const wallet_port_data = walletInfo.reduce((accumulator, object) => accumulator + object.volume, 0);
   const chartRef = useRef(null);
 
   useEffect(() => {
     if (usersStockHistoryData.length > 0 && chartRef.current && stockInfo.length > 0) {
       // Create an object to store the sum of closing prices for each date
       const sumByDate = {};
-
-      // Calculate the total volume in the wallet
-      const wallet_port_data = walletInfo.reduce((accumulator, object) => accumulator + object.volume, 0);
 
       // Calculate the sum of closing prices for each date and update the respective sums
       usersStockHistoryData.forEach((item) => {
@@ -37,64 +53,69 @@ const StockPriceGraph = ({ }) => {
 
       const ctx = chartRef.current.getContext("2d");
 
-      // Check if a chart instance already exists and destroy it before creating a new chart
       if (chartRef.current.chart) {
         chartRef.current.chart.destroy();
       }
-      chartRef.current.chart = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: "Sum of Closing Prices Stock",
-              data: data,
-              borderColor: "rgba(75, 192, 192, 1)",
-              backgroundColor: "rgba(75, 192, 192, 0.2)",
-              borderWidth: 2,
-            },
-            {
-              label: "Sum of Port",
-              data: data.map(meng => meng + wallet_port_data),
-              borderColor: "rgba(75, 75, 75, 1)",
-              backgroundColor: "rgba(75, 75, 75, 0.2)",
-              borderWidth: 2,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          scales: {
-            x: {
-              type: "time",
-              time: {
-                unit: "day",
-              },
-              ticks: {
-                maxRotation: 0,
-                minRotation: 0,
-              },
-            },
-            y: {
-              beginAtZero: true,
-            },
+
+      setChartData({
+        labels: labels,
+        datasets: [
+          {
+            label: "Sum of Closing Prices Stock",
+            data: data,
+            borderColor: "rgba(75, 192, 192, 1)",
+            backgroundColor: "rgba(75, 192, 192, 0.2)",
+            borderWidth: 2,
           },
-          plugins: {
-            legend: {
-              display: true,
-              position: "top",
-            },
-            title: {
-              display: true,
-              text: "Stock Price",
-            },
+          {
+            label: "Sum of Port",
+            data: data.map((meng) => meng + wallet_port_data),
+            borderColor: "rgba(75, 75, 75, 1)",
+            backgroundColor: "rgba(75, 75, 75, 0.2)",
+            borderWidth: 2,
           },
-        },
+        ],
       });
+
     }
   }, [usersStockHistoryData, stockInfo, walletInfo]);
 
-  return <canvas ref={chartRef}></canvas>;
+  return (
+    <CCardBody>
+      <CRow>
+        <CCol sm={5}>
+          <h4 id="traffic" className="card-title mb-0">
+            Traffic
+          </h4>
+          <div className="small text-medium-emphasis">January - July 2021</div>
+        </CCol>
+        <CCol sm={7} className="d-none d-md-block">
+          <CButton color="primary" className="float-end">
+            <CIcon icon={cilCloudDownload} />
+          </CButton>
+          <CButtonGroup className="float-end me-3">
+            {['Day', 'Month', 'Year'].map((value) => (
+              <CButton
+                color="outline-secondary"
+                key={value}
+                className="mx-0"
+                active={value === 'Month'}
+              >
+                {value}
+              </CButton>
+            ))}
+          </CButtonGroup>
+        </CCol>
+      </CRow>
+      <CChartLine
+        data={{
+          labels: chartData.labels,
+          datasets: chartData.datasets,
+        }}
+        ref={chartRef}
+      />
+    </CCardBody>
+  );
 };
 
 export default StockPriceGraph;

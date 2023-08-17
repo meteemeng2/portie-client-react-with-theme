@@ -10,7 +10,7 @@ export const StoreProvider = ({ children }) => {
   const nodejs_url = `http://localhost:3333/api/stocks`;
 
   //JWT
-  const [jwtToken, setJwtToken] = useState('');
+  const [jwtToken, setJwtToken] = useState(localStorage.getItem('jwtToken') || '');
 
 
   // everyday price
